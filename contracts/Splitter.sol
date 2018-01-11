@@ -85,7 +85,7 @@ contract Splitter {
     /************** Business Logic **************/
     function splitValue() public payable {
         require(isPair(msg.sender));
-        require(msg.value > 1);
+        require(msg.value > 1); //can't split 1 wei!
 
         //do the division. In the case of even numbers, A and B will get the same amount.
         //In the case of odd numbers, B will receive 1 more wei than A (life isn't fair!)
