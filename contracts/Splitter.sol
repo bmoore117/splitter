@@ -92,7 +92,7 @@ contract Splitter {
         uint amountA = msg.value / 2;
         uint amountB = msg.value - amountA;
 
-        RecipientPair pair = recipients[msg.sender];
+        RecipientPair memory pair = recipients[msg.sender];
 
         pair.recipA.transfer(amountA);
         pair.recipB.transfer(amountB);
