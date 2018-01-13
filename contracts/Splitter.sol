@@ -35,6 +35,8 @@ contract Splitter {
     function splitValue(address recipA, address recipB) public payable {
         require(msg.value > 1); //can't split 1 wei!
 
+        LogSplitPayout(recipA, amountA, recipB, amountB, senderChange);
+
         //do the division. In the case of even numbers, the sender will receive no change.
         //In the case of odd numbers, the sender will receive the 1 extra wei back
         uint amountA = msg.value / 2;
@@ -46,7 +48,5 @@ contract Splitter {
         }
         recipA.transfer(amountA);
         recipB.transfer(amountB);
-
-        LogSplitPayout(recipA, amountA, recipB, amountB, senderChange);
     }
 }
