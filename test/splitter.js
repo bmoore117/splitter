@@ -22,6 +22,7 @@ contract('Splitter', function(accounts) {
         var endingBalance3;
         var paidToA;
         var paidToB;
+        var senderChange;
 
         return getBalancePromise(accounts[2])
         .then(balance => {
@@ -34,12 +35,15 @@ contract('Splitter', function(accounts) {
             var logs = txInfo.logs[0];
             paidToA = logs.args.amountA;
             paidToB = logs.args.amountB;
+            senderChange = logs.args.senderChange;
             return getBalancePromise(accounts[2]);
         }).then(balance => {
             endingBalance2 = balance;
             return getBalancePromise(accounts[3]);
         }).then(balance => {
             endingBalance3 = balance;
+
+            assert.strictEqual(senderChange.toString(10), "0", "Sender change unexpected");
 
             var amtA = startingBalance2.plus(paidToA);
             assert.strictEqual(amtA.toString(10), endingBalance2.toString(10), "Split not properly performed for recipA");
@@ -57,6 +61,7 @@ contract('Splitter', function(accounts) {
         var endingBalance3;
         var paidToA;
         var paidToB;
+        var senderChange;
 
         return getBalancePromise(accounts[2])
         .then(balance => {
@@ -69,6 +74,7 @@ contract('Splitter', function(accounts) {
             var logs = txInfo.logs[0];
             paidToA = logs.args.amountA;
             paidToB = logs.args.amountB;
+            senderChange = logs.args.senderChange;
             return getBalancePromise(accounts[2]);
         }).then(balance => {
             endingBalance2 = balance;
@@ -76,8 +82,7 @@ contract('Splitter', function(accounts) {
         }).then(balance => {
             endingBalance3 = balance;
 
-            var difference = paidToB.minus(paidToA);
-            assert.strictEqual(difference.toString(10), "1", "Split not properly calculated");
+            assert.strictEqual(senderChange.toString(10), "1", "Sender change unexpected");
 
             var amtA = startingBalance2.plus(paidToA);
             assert.strictEqual(amtA.toString(10), endingBalance2.toString(10), "Split not properly performed for recipA");
