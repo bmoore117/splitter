@@ -2,23 +2,11 @@ pragma solidity ^0.4.17;
 
 contract Splitter {
 
-    //ownership
     address public owner;
-    bool public isServiceEnabled;
-    event LogServiceStateChanged(
-        bool newState
-    );
+    bytes32 private hashedPassword;
 
-    //model
-    struct RecipientPair {
-        address recipA;
-        address recipB;
-        uint index;
-    }
-    event LogRecipientPairAdded(
-        address sender,
-        address recipA,
-        address recipB
+    event LogContractKilled(
+        uint balanceTransferred
     );
     event LogSplitPayout(
         address recipA,
@@ -27,64 +15,23 @@ contract Splitter {
         uint amountB
     );
 
-    mapping(address => RecipientPair) private recipients;
-    address[] private recipientIndex;
-
     /************** Init & Modifiers **************/
-    modifier requireEnabled {
-        require(isServiceEnabled);
-        _;
-    }
-
-    function Splitter(bool initialServiceState) public {
+    function Splitter(bytes32 passwordHash) public {
         owner = msg.sender;
-        isServiceEnabled = initialServiceState;
+        hashedPassword = passwordHash;
     }
 
-    function setServiceEnabled(bool newState) public {
+    function kill(string password) public {
         require(msg.sender == owner);
-        isServiceEnabled = newState;
-        LogServiceStateChanged(isServiceEnabled);
+        if (keccak256(password) == hashedPassword) {
+            LogContractKilled(this.balance);
+            selfdestruct(owner);
+        }
     }
     /************** End Init & Modifiers **************/
 
-    /************** Model Crud **************/
-    function isPair(address sender) public view returns(bool pairExists) {
-        if (recipientIndex.length == 0) 
-            return false;
-
-        address value = recipientIndex[recipients[sender].index];
-        
-        return (sender == value);
-    }
-
-    function addRecipientPair(address recipA, address recipB) requireEnabled public returns (uint index) {
-        require(!isPair(msg.sender));
-
-        uint idx = recipientIndex.push(msg.sender) - 1;
-        recipients[msg.sender].index = idx;
-        recipients[msg.sender].recipA = recipA;
-        recipients[msg.sender].recipB = recipB;
-        
-        LogRecipientPairAdded(msg.sender, recipA, recipB);
-        return idx;
-    }
-
-    function getRecipientPairSenderByIndex(uint index) public view returns (address sender) {
-        return recipientIndex[index];
-    }
-
-    function getRecipientPairBySender(address sender) public view returns (address recipA, address recipB) {
-        require(isPair(sender));
-        RecipientPair memory p = recipients[sender];
-
-        return (p.recipA, p.recipB);
-    }
-    /************** End Model Crud **************/
-
     /************** Business Logic **************/
-    function splitValue() public payable {
-        require(isPair(msg.sender));
+    function splitValue(address recipA, address recipB) public payable {
         require(msg.value > 1); //can't split 1 wei!
 
         //do the division. In the case of even numbers, A and B will get the same amount.
@@ -92,11 +39,9 @@ contract Splitter {
         uint amountA = msg.value / 2;
         uint amountB = msg.value - amountA;
 
-        RecipientPair memory pair = recipients[msg.sender];
+        recipA.transfer(amountA);
+        recipB.transfer(amountB);
 
-        pair.recipA.transfer(amountA);
-        pair.recipB.transfer(amountB);
-
-        LogSplitPayout(pair.recipA, amountA, pair.recipB, amountB);
+        LogSplitPayout(recipA, amountA, recipB, amountB);
     }
 }
